@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Created on Mon Feb 13 12:41:46 2023
@@ -11,7 +12,7 @@ MatrixClock - an ESP32 driven HUB75 LED matrix clock.
 """
 
 ## system modules
-import machine
+from machine import Timer
 from machine import I2C
 from machine import Pin
 
@@ -271,8 +272,8 @@ def clocktick(timer):
     ## 2) update status on OLED (if available)
     # update_oled()
 
+    ## 3) update time display
     ## TODO: update time display every second (when flickerfree)
-    ## 3) update time display every 60secs
     if ts_clocktick % 60 == 0:
         set_clock(ts_clocktick)
 
@@ -364,14 +365,14 @@ def main():
     ## https://docs.micropython.org/en/latest/esp8266/quickref.html#timers
     ## https://docs.micropython.org/en/latest/esp32/quickref.html#timers
     ## https://docs.micropython.org/en/latest/library/pyb.Timer.html
-    tim = machine.Timer(0)
+    tim = Timer(0)
     if not debug_mode:
-        tim.init(period=1000, mode=machine.Timer.PERIODIC, callback=clocktick)
+        tim.init(period=1000, mode=Timer.PERIODIC, callback=clocktick)
     else:
         ## start at 05:59:00 UTC = 06:59:00 CET ...
         ts_clocktick = 60 * 60 * 5 + 59 * 60
         ## ... and run 5x faster
-        tim.init(period=200, mode=machine.Timer.PERIODIC, callback=clocktick)
+        tim.init(period=200, mode=Timer.PERIODIC, callback=clocktick)
 
     ##-------------------------------------------------------------------------
     ## run scheduled sync as thread
