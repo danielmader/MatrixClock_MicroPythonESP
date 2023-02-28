@@ -3,7 +3,7 @@
 
 """
 @author: mada
-@version: 2023-02-27
+@version: 2023-02-28
 
 https://forum.micropython.org/viewtopic.php?t=2440
 https://forum.micropython.org/viewtopic.php?t=2951
@@ -45,7 +45,10 @@ def init():
     print('>> setting up station interface ...')
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
-    wlan.config(reconnects=5)
+    try:
+        wlan.config(reconnects=5)  # ESP32 only
+    except:
+        pass
 
     ## auto-connect to last network (ESP8266 standard behavior)
     pass
@@ -59,7 +62,7 @@ def init():
 ##=============================================================================
 def isconnected():
     '''
-    Wrapper function:
+    Wrapper function to check connection status of station interface.
     '''
     return wlan.isconnected()
 
@@ -105,3 +108,8 @@ def connect():
                     print('## network config:', wlan.ifconfig())
                     return
             print('!! connection failed!')
+
+##=============================================================================
+if __name__ == '__main__':
+    ## init WiFi and connect
+    init()

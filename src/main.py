@@ -4,7 +4,7 @@
 Created on Mon Feb 13 12:41:46 2023
 
 @author: mada
-@version: 2023-02-27
+@version: 2023-02-28
 
 MatrixClock - an ESP32 driven HUB75 LED matrix clock.
 * Synchronization with NTP.
@@ -17,10 +17,11 @@ from machine import I2C
 from machine import Pin
 
 import ntptime
-import uasyncio
+
 import _thread
+import uasyncio
+
 import utime as time
-#import time
 
 ## 3rd party modules
 import hub75
@@ -35,9 +36,8 @@ import madFonts
 ##*****************************************************************************
 ##*****************************************************************************
 
-## HUB75 LED matrix with custom pinout
+## HUB75 LED matrix with custom pinout ----------------------------------------
 config = hub75.Hub75SpiConfiguration()
-
 ## row select pins
 config.line_select_a_pin_number = 15
 config.line_select_b_pin_number = 2
@@ -57,29 +57,14 @@ config.latch_pin_number = 5
 config.output_enable_pin_number = 17  # active low
 config.spi_miso_pin_number = 13  # not connected
 ## misc
-config.illumination_time_microseconds = 1
+config.illumination_time_microseconds = 25
 
-ROW_SIZE = 32
-COL_SIZE = 64
+matrix = matrixdata.MatrixData(row_size=32, col_size=64)
+matrix.record_dirty_bytes = False
 
-matrix = matrixdata.MatrixData(ROW_SIZE, COL_SIZE)
 hub75spi = hub75.Hub75Spi(matrix, config)
 
-## Show Python Logo
-matrix.set_pixels(0, 16, logo)
-for i in range(100):
-    hub75spi.display_data()
-
-## NTP sync interval ----------------------------------------------------------
-ntp_interval = 3600 * 12 # 3600s = 60min = 1h
-ts_ntpsync = 0
-ts_clocktick = time.time()
-
-## DEBUG mode -----------------------------------------------------------------
-debug_mode = False
-# debug_mode = True
-
-## characters -----------------------------------------------------------------
+## dot matrix characters ------------------------------------------------------
 big_blue = {
     '0' : madFonts.big0,
     '1' : madFonts.big1,
@@ -131,6 +116,17 @@ for char in small_blue:
         row = [col * 6 for col in row]  # yellow
         small_yellow[char].append(row)
 
+## NTP sync interval ----------------------------------------------------------
+ntp_interval = 3600 * 12 # 3600s = 60min = 1h
+ts_ntpsync = 0
+ts_clocktick = time.time()
+
+## DEBUG mode -----------------------------------------------------------------
+debug_mode = False
+# debug_mode = True
+
+
+
 ## SHT40 temperature & pressure sensor ----------------------------------------
 modes = (
     ("SERIAL_NUMBER", 0x89, "Serial number", 0.01),
@@ -174,7 +170,7 @@ def set_clock(ts_clocktick):
     hour, minute, second = localtime[3:6]
     temp, hum = read_sensor()
 
-    ## TODO: display full time when flickerfree
+    ## TODO: show full timestamp when flickerfree
     # time_str = "{:02d}:{:02d}.{:02d}".format(hour, minute, second)
     time_str = "{:02d}:{:02d}".format(hour, minute)
     sensor_str = "{:4.1f}~° {:4.1f}~%".format(temp, hum)
@@ -196,7 +192,7 @@ def set_clock(ts_clocktick):
     ##-------------------------------------------------------------------------
     ## assemble character images lists per line
     # time_display = []
-    ## TODO: display full time when flickerfree
+    ## TODO: show full timestamp when flickerfree
     # for char in time_str[:-3]:
     #     time_display.append(big[char])
     # for char in time_str[-3:]:
@@ -211,9 +207,9 @@ def set_clock(ts_clocktick):
 
     ##-------------------------------------------------------------------------
     ## write out new pixel states
-    # matrix.clear_dirty_bytes()
+    #matrix.clear_dirty_bytes()
     matrix.clear_all_bytes()
-    ## TODO: display full time when flickerfree
+    ## TODO: show full timestamp when flickerfree
     # col = 4
     # for img in time_display[:-3]:
     #     matrix.set_pixels(5, col+1, img)
@@ -339,21 +335,15 @@ def displayThread():
 
 ##*****************************************************************************
 ##*****************************************************************************
-
-##=============================================================================
-def main():
-    global ts_ntpsync
-    global ts_clocktick
-    global temp
-    global hum
-
+if __name__ == '__main__':
     ##-------------------------------------------------------------------------
     ## init clock
     temp, hum = read_sensor()
     set_clock(ts_clocktick)
 
     ##-------------------------------------------------------------------------
-    ## run display thread
+    ## show Python Logo & run display thread
+    matrix.set_pixels(0, 16, logo)
     _thread.start_new_thread(displayThread, ())
 
     ##-------------------------------------------------------------------------
@@ -377,8 +367,3 @@ def main():
     ##-------------------------------------------------------------------------
     ## run scheduled sync as thread
     uasyncio.run(scheduled_sync())
-
-##*****************************************************************************
-##*****************************************************************************
-
-main()
