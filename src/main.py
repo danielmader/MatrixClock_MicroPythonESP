@@ -4,7 +4,7 @@
 Created on Mon Feb 13 12:41:46 2023
 
 @author: mada
-@version: 2023-02-28
+@version: 2023-03-01
 
 MatrixClock - an ESP32 driven HUB75 LED matrix clock.
 * Synchronization with NTP.
@@ -57,7 +57,7 @@ config.latch_pin_number = 5
 config.output_enable_pin_number = 17  # active low
 config.spi_miso_pin_number = 13  # not connected
 ## misc
-config.illumination_time_microseconds = 25
+config.illumination_time_microseconds = 1
 
 matrix = matrixdata.MatrixData(row_size=32, col_size=64)
 matrix.record_dirty_bytes = False
