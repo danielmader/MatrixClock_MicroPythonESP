@@ -4,7 +4,7 @@
 Created on Mon Feb 13 12:41:46 2023
 
 @author: mada
-@version: 2023-03-01
+@version: 2023-03-02
 
 MatrixClock - an ESP32 driven HUB75 LED matrix clock.
 * Synchronization with NTP.
@@ -13,14 +13,12 @@ MatrixClock - an ESP32 driven HUB75 LED matrix clock.
 
 ## system modules
 from machine import Timer
-from machine import I2C
 from machine import Pin
+from machine import I2C
 
 import ntptime
 
-import _thread
-import uasyncio
-
+import uasyncio as asyncio
 import utime as time
 
 ## 3rd party modules
@@ -35,6 +33,20 @@ import madFonts
 
 ##*****************************************************************************
 ##*****************************************************************************
+
+## DEBUG mode -----------------------------------------------------------------
+debug_mode = False
+# debug_mode = True
+
+## NTP sync interval ----------------------------------------------------------
+ntp_interval = 3600 * 12 # 3600s = 60min = 1h
+ts_ntpsync = 0
+if debug_mode:
+    ## start at 05:59:00 UTC = 06:59:00 CET ...
+    ts_clocktick = 60 * 60 * 5 + 59 * 60
+else:
+    ## start at 00:00:00 UTC
+    ts_clocktick = time.time()
 
 ## HUB75 LED matrix with custom pinout ----------------------------------------
 config = hub75.Hub75SpiConfiguration()
@@ -116,17 +128,6 @@ for char in small_blue:
         row = [col * 6 for col in row]  # yellow
         small_yellow[char].append(row)
 
-## NTP sync interval ----------------------------------------------------------
-ntp_interval = 3600 * 12 # 3600s = 60min = 1h
-ts_ntpsync = 0
-ts_clocktick = time.time()
-
-## DEBUG mode -----------------------------------------------------------------
-debug_mode = False
-# debug_mode = True
-
-
-
 ## SHT40 temperature & pressure sensor ----------------------------------------
 modes = (
     ("SERIAL_NUMBER", 0x89, "Serial number", 0.01),
@@ -144,88 +145,9 @@ i2c = I2C(0, scl=Pin(22), sda=Pin(21))
 i2c_devs = i2c.scan()
 print("\n>> found I2C devices:", i2c_devs)
 sht40 = i2c_devs[0]
-temp = 99.9
-hum = 99.9
 
 ##*****************************************************************************
 ##*****************************************************************************
-
-##=============================================================================
-def set_clock(ts_clocktick):
-    '''
-    Update time display.
-    '''
-    global temp
-    global hum
-
-    ##-------------------------------------------------------------------------
-    ## assemble time and sensor strings
-    localtime = datetime_helper.cettime(ts_clocktick)
-    # if len(localtime) == 8:
-    #     ## MicroPython
-    #     year, month, mday, hour, minute, second, weekday, yearday = localtime
-    # elif len(localtime) == 9:
-    #     ## CPython
-    #     year, month, mday, hour, minute, second, weekday, yearday, dst = localtime
-    hour, minute, second = localtime[3:6]
-    temp, hum = read_sensor()
-
-    ## TODO: show full timestamp when flickerfree
-    # time_str = "{:02d}:{:02d}.{:02d}".format(hour, minute, second)
-    time_str = "{:02d}:{:02d}".format(hour, minute)
-    sensor_str = "{:4.1f}~° {:4.1f}~%".format(temp, hum)
-
-    ## DEBUG
-    # print("{} > {}".format(time_str, localtime[3:6]))
-    # print("{}".format(sensor_str))
-
-    ##-------------------------------------------------------------------------
-    ## use darkmode during night time
-    ## TODO: handle darkmode
-    # if hour in [20,21,22,23,0,1,2,3,4,5,6]:
-    #     darkmode = True
-    # else:
-    #     darkmode = False
-    big = big_yellow
-    small = small_yellow
-
-    ##-------------------------------------------------------------------------
-    ## assemble character images lists per line
-    # time_display = []
-    ## TODO: show full timestamp when flickerfree
-    # for char in time_str[:-3]:
-    #     time_display.append(big[char])
-    # for char in time_str[-3:]:
-    #     time_display.append(small[char])
-    time_display = []
-    for char in time_str:
-        time_display.append(big[char])
-
-    sensor_display = []
-    for char in sensor_str:
-        sensor_display.append(small[char])
-
-    ##-------------------------------------------------------------------------
-    ## write out new pixel states
-    #matrix.clear_dirty_bytes()
-    matrix.clear_all_bytes()
-    ## TODO: show full timestamp when flickerfree
-    # col = 4
-    # for img in time_display[:-3]:
-    #     matrix.set_pixels(5, col+1, img)
-    #     col += len(img[0]) + 1
-    # for img in time_display[-3:]:
-    #     matrix.set_pixels(12, col+1, img)
-    #     col += len(img[0]) + 1
-    col = 10
-    for img in time_display:
-        matrix.set_pixels(5, col+1, img)
-        col += len(img[0]) + 2
-
-    col = 2
-    for img in sensor_display:
-        matrix.set_pixels(22, col+1, img)
-        col += len(img[0]) + 1
 
 ##=============================================================================
 def read_sensor():
@@ -255,115 +177,188 @@ def read_sensor():
     # print('> humidity:', rh_pRH)
     return t_degC, rh_pRH
 
+##=============================================================================
+def sync_time_NTP():
+    '''
+    Synchronize via NTP.
+    '''
+    try:
+        print('\n>> syncing with NTP ...')
+        ## check connection status, and (re-)connect if required
+        wlan_helper.connect()
+
+        ## get time
+        # print('<< NTP timestamp:', ntptime.time())
+        ## set time
+        ntptime.settime()
+        print('<< NTP timestamp:', time.time())
+        return True
+
+    except:
+        print('!! NTP synchronization failed!')
+        return False
+
 ##-----------------------------------------------------------------------------
-def clocktick(timer):
+async def _scheduled_sync(lock):
+    '''
+    Synchronize via NTP.
+    '''
+    global ts_clocktick
+    global ts_ntpsync
+
+    while True:
+        if (ts_ntpsync == 0) or (ts_clocktick - ts_ntpsync > ntp_interval):
+            await lock.acquire()
+            for _ in range(5):
+                if sync_time_NTP():
+                    ts_clocktick = time.time()
+                    ts_ntpsync = ts_clocktick
+                    print(datetime_helper.cettime(ts_clocktick))
+                    break
+            lock.release()
+
+        await asyncio.sleep(5)
+
+
+##-----------------------------------------------------------------------------
+async def _refresh_display(lock):
+    '''
+    Refresh clock display.
+    '''
+    while True:
+        await lock.acquire()
+        hub75spi.display_data()
+        lock.release()
+        await asyncio.sleep(0)
+
+##-----------------------------------------------------------------------------
+async def _set_clock(lock):
+    '''
+    Update time display.
+    '''
+    temp = 99.9
+    hum = 99.9
+
+    while True:
+        ##---------------------------------------------------------------------
+        ## assemble time and sensor strings
+        localtime = datetime_helper.cettime(ts_clocktick)
+        # if len(localtime) == 8:
+        #     ## MicroPython
+        #     year, month, mday, hour, minute, second, weekday, yearday = localtime
+        # elif len(localtime) == 9:
+        #     ## CPython
+        #     year, month, mday, hour, minute, second, weekday, yearday, dst = localtime
+        hour, minute, second = localtime[3:6]
+        temp, hum = read_sensor()
+
+        ## TODO: show full timestamp when flickerfree
+        # time_str = "{:02d}:{:02d}.{:02d}".format(hour, minute, second)
+        time_str = "{:02d}:{:02d}".format(hour, minute)
+        sensor_str = "{:4.1f}~° {:4.1f}~%".format(temp, hum)
+
+        ## DEBUG
+        # print("{} > {}".format(time_str, localtime[3:6]))
+        # print("{}".format(sensor_str))
+
+        ##---------------------------------------------------------------------
+        ## use darkmode during night time
+        ## TODO: handle darkmode
+        # if hour in [20,21,22,23,0,1,2,3,4,5,6]:
+        #     darkmode = True
+        # else:
+        #     darkmode = False
+        big = big_yellow
+        small = small_yellow
+
+        ##---------------------------------------------------------------------
+        ## assemble character images lists per line
+        # time_display = []
+        ## TODO: show full timestamp when flickerfree
+        # for char in time_str[:-3]:
+        #     time_display.append(big[char])
+        # for char in time_str[-3:]:
+        #     time_display.append(small[char])
+        time_display = []
+        for char in time_str:
+            time_display.append(big[char])
+
+        sensor_display = []
+        for char in sensor_str:
+            sensor_display.append(small[char])
+
+        ##---------------------------------------------------------------------
+        await lock.acquire()
+        #matrix.clear_dirty_bytes()
+        matrix.clear_all_bytes()
+        lock.release()    ## write out new pixel states
+        ## TODO: show full timestamp when flickerfree
+        # col = 4
+        # for img in time_display[:-3]:
+        #     matrix.set_pixels(5, col+1, img)
+        #     col += len(img[0]) + 1
+        # for img in time_display[-3:]:
+        #     matrix.set_pixels(12, col+1, img)
+        #     col += len(img[0]) + 1
+        col = 10
+        for img in time_display:
+            matrix.set_pixels(5, col+1, img)
+            col += len(img[0]) + 2
+
+        col = 2
+        for img in sensor_display:
+            matrix.set_pixels(22, col+1, img)
+            col += len(img[0]) + 1
+
+        await asyncio.sleep(1)
+
+##-----------------------------------------------------------------------------
+def _clocktick(timer):
     '''
     Timed function to add one second.
     '''
     global ts_clocktick
-
-    ## 1) increase clock counter
     ts_clocktick += 1
 
-    ## 2) update status on OLED (if available)
-    # update_oled()
-
-    ## 3) update time display
-    ## TODO: update time display every second (when flickerfree)
-    if ts_clocktick % 60 == 0:
-        set_clock(ts_clocktick)
-
-##-----------------------------------------------------------------------------
-## https://docs.micropython.org/en/latest/library/uasyncio.html
-## https://gpiocc.github.io/learn/micropython/esp/2020/06/13/martin-ku-asynchronous-programming-with-uasyncio-in-micropython.html
-async def sync_time_NTP():
-    '''
-    Resync with NTP.
-    '''
-    global ts_ntpsync
-    global ts_clocktick
-    global ntp_interval
-    if debug_mode:
-        ntp_interval = 50  # each 50s * 0.2 = each 10s
-
-    while True:
-        try:
-            if (ts_ntpsync == 0) or (ts_clocktick - ts_ntpsync > ntp_interval):
-                print('\n>> syncing with NTP ...')
-                ## check connection status, and (re-)connect if required
-                ts_delta_1 = ts_clocktick - time.time()
-                wlan_helper.connect()
-                ts_delta_2 = ts_clocktick - time.time()
-                if not debug_mode:
-                    ts_clocktick += (ts_delta_2 - ts_delta_1)
-
-                if debug_mode:
-                    ## get time
-                    print('<< NTP timestamp:', ntptime.time())
-                else:
-                    ## set time
-                    ntptime.settime()
-                    ts_clocktick = time.time()
-                    print('<< NTP timestamp:', ts_clocktick)
-                ts_ntpsync = ts_clocktick
-
-                ## update clock immediately after NTP sync
-                set_clock(ts_ntpsync)
-            else:
-                pass
-
-        except:
-            print('!! NTP synchronization failed!')
-        finally:
-            ## sleep before checking again
-            await uasyncio.sleep(5)
-
-##-----------------------------------------------------------------------------
-async def scheduled_sync():
-    '''
-    Scheduler function for NTP coroutine.
-    '''
-    # print("\n>> scheduling NTP sync ...")
-    event_loop = uasyncio.get_event_loop()
-    event_loop.create_task(sync_time_NTP())
-    event_loop.run_forever()
-
-##-----------------------------------------------------------------------------
-def displayThread():
-    while True:
-        hub75spi.display_data()
-
-##*****************************************************************************
-##*****************************************************************************
-if __name__ == '__main__':
+##=============================================================================
+async def main():
     ##-------------------------------------------------------------------------
-    ## init clock
-    temp, hum = read_sensor()
-    set_clock(ts_clocktick)
-
-    ##-------------------------------------------------------------------------
-    ## show Python Logo & run display thread
+    ## show Python Logo
     matrix.set_pixels(0, 16, logo)
-    _thread.start_new_thread(displayThread, ())
+    for _ in range(100):
+        hub75spi.display_data()
 
     ##-------------------------------------------------------------------------
     ## init WiFi
     wlan_helper.init()
 
     ##-------------------------------------------------------------------------
-    ## init timers
+    ## init timer
     ## https://docs.micropython.org/en/latest/esp8266/quickref.html#timers
     ## https://docs.micropython.org/en/latest/esp32/quickref.html#timers
-    ## https://docs.micropython.org/en/latest/library/pyb.Timer.html
     tim = Timer(0)
     if not debug_mode:
-        tim.init(period=1000, mode=Timer.PERIODIC, callback=clocktick)
+        period = 1000
     else:
-        ## start at 05:59:00 UTC = 06:59:00 CET ...
-        ts_clocktick = 60 * 60 * 5 + 59 * 60
-        ## ... and run 5x faster
-        tim.init(period=200, mode=Timer.PERIODIC, callback=clocktick)
+        ## run 5x faster
+        period = 200
+    tim.init(period=period, mode=Timer.PERIODIC, callback=_clocktick)
 
     ##-------------------------------------------------------------------------
-    ## run scheduled sync as thread
-    uasyncio.run(scheduled_sync())
+    ## create the Lock instance
+    lock = asyncio.Lock()
+
+    ##-------------------------------------------------------------------------
+    ## create co-routines (cooperative tasks)
+    asyncio.create_task(_set_clock(lock))
+    asyncio.create_task(_refresh_display(lock))
+    asyncio.create_task(_scheduled_sync(lock))
+
+    while True:
+        await asyncio.sleep(0.001)
+
+try:
+    asyncio.run(main())
+finally:
+    ## clear retained state
+    _ = asyncio.new_event_loop()
