@@ -4,12 +4,11 @@
 Created on Sun Feb 26 08:37:30 2023
 
 @author: mada
-@version: 2023-03-02
+@version: 2023-03-06
 """
 
 import hub75
 import matrixdata
-from logo import logo
 
 import uasyncio as asyncio
 import utime as time
@@ -40,14 +39,8 @@ config.illumination_time_microseconds = 1
 matrix = matrixdata.MatrixData(row_size=32, col_size=64)
 hub75spi = hub75.Hub75Spi(matrix, config)
 
-# Show Python Logo
-matrix.set_pixels(0, 16, logo)
-for i in range(100):
-    hub75spi.display_data()
-matrix.clear_dirty_bytes()
-
 ##-----------------------------------------------------------------------------
-square = [
+rect_14x32 = [
     [1,1,2,2,3,3,4,4,5,5,6,6,7,7],
     [1,1,2,2,3,3,4,4,5,5,6,6,7,7],
     [1,1,2,2,3,3,4,4,5,5,6,6,7,7],
@@ -81,11 +74,23 @@ square = [
     [1,1,2,2,3,3,4,4,5,5,6,6,7,7],
     [1,1,2,2,3,3,4,4,5,5,6,6,7,7]]
 
-async def set_pixels(lock):
-
+rect_64x32_w = [ [7] * 64] * 32
+rect_64x32_r = [ [4] * 64] * 32
+rect_64x32_g = [ [2] * 64] * 32
+rect_64x32_b = [ [1] * 64] * 32
+      
+##-----------------------------------------------------------------------------
+async def setpixel1(lock):
+    '''
+    Clear matrix pixels in two ways:
+        * only dirty pixels
+        * all pixels
+    Set images.
+    '''
     def _seconds():
         return time.localtime()[5]
 
+    print("\n>> Clear matrix demo ...")
     while True:
         ## wait for released lock
         await lock.acquire()
@@ -98,29 +103,61 @@ async def set_pixels(lock):
             reset = matrix.clear_dirty_bytes
         print(reset.__name__, matrix.record_dirty_bytes)
         reset()
-        matrix.set_pixels(0,0, square)
-        matrix.set_pixels(0,25, square)
-        matrix.set_pixels(0,50, square)
+        matrix.set_pixels(0,0, rect_14x32)
+        matrix.set_pixels(0,25, rect_14x32)
+        matrix.set_pixels(0,50, rect_14x32)
 
         ## release lock
         lock.release()
-        await asyncio.sleep(0)
+        
+        await asyncio.sleep(0)  # round-robin scheduling
 
-async def refresh_display(lock):
+##-----------------------------------------------------------------------------
+async def setpixel2(lock):
+    '''
+    Clear matrix pixels and set new image.
+    '''
+    print("\n>> Flicker demo ...")
+    for pattern in (rect_64x32_r, rect_64x32_g, rect_64x32_b, rect_64x32_w):
+        ## wait for released lock
+        await lock.acquire()
+        
+        matrix.clear_all_bytes()
+        matrix.set_pixels(0,0, pattern)
+        
+        ## release lock
+        lock.release()
+        
+        await asyncio.sleep(15)  # pause for 15s
+
+##-----------------------------------------------------------------------------
+async def refresh(lock):
     while True:
         await lock.acquire()
         hub75spi.display_data()
         lock.release()
         await asyncio.sleep(0)
 
+##-----------------------------------------------------------------------------
 async def main():
     ## create the Lock instance
     lock = asyncio.Lock()
-    ## create co-routines (cooperative tasks)
-    asyncio.create_task(refresh_display(lock))
-    asyncio.create_task(set_pixels(lock))
-    await asyncio.sleep(30)  # run for 30s
 
+    ## create co-routines (cooperative tasks)
+    asyncio.create_task(refresh(lock))   
+
+    ## 1) demonstrate speed of clear*() methods
+    task1 = asyncio.create_task(setpixel1(lock))
+    await asyncio.sleep(20)  # pause for 20s
+    task1.cancel()
+    
+    ## 2) show general flicker even without parallel tasks
+    task2 = asyncio.create_task(setpixel2(lock))      
+    await asyncio.sleep(60)  # pause for 60s
+    task2.cancel()
+    print("\n>> Done.")
+
+##-----------------------------------------------------------------------------
 try:
     asyncio.run(main())
 finally:
