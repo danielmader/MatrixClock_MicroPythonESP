@@ -4,7 +4,7 @@
 Created on Mon Feb 13 12:41:46 2023
 
 @author: mada
-@version: 2023-03-04
+@version: 2023-03-06
 
 MatrixClock - an ESP32 driven HUB75 LED matrix clock.
 * Synchronization with NTP.
@@ -29,7 +29,7 @@ from logo import logo
 ## custom modules
 import wlan_util  # => creds.py
 import datetime_util
-import madFonts
+import characters
 
 ##*****************************************************************************
 ##*****************************************************************************
@@ -41,6 +41,8 @@ debug_mode = False
 ## NTP sync interval ----------------------------------------------------------
 ntp_interval = 3600 * 12 # 3600s = 60min = 1h
 ts_ntpsync = 0
+
+## init clock -----------------------------------------------------------------
 if debug_mode:
     ## start at 05:59:00 UTC = 06:59:00 CET ...
     ts_clocktick = 60 * 60 * 5 + 59 * 60
@@ -78,41 +80,41 @@ hub75spi = hub75.Hub75Spi(matrix, config)
 
 ## dot matrix characters ------------------------------------------------------
 big_blue = {
-    '0' : madFonts.big0,
-    '1' : madFonts.big1,
-    '2' : madFonts.big2,
-    '3' : madFonts.big3,
-    '4' : madFonts.big4,
-    '5' : madFonts.big5,
-    '6' : madFonts.big6,
-    '7' : madFonts.big7,
-    '8' : madFonts.big8,
-    '9' : madFonts.big9,
-    '.' : madFonts.big_dot,
-    ':' : madFonts.big_colon,
-    '°' : madFonts.big_degree,
-    '%' : madFonts.big_percent,
-    ' ' : madFonts.big_space,
-    '~' : madFonts.pixel_black,
+    '0' : characters.big0,
+    '1' : characters.big1,
+    '2' : characters.big2,
+    '3' : characters.big3,
+    '4' : characters.big4,
+    '5' : characters.big5,
+    '6' : characters.big6,
+    '7' : characters.big7,
+    '8' : characters.big8,
+    '9' : characters.big9,
+    '.' : characters.big_dot,
+    ':' : characters.big_colon,
+    '°' : characters.big_degree,
+    '%' : characters.big_percent,
+    ' ' : characters.big_space,
+    '~' : characters.pixel_black,
 }
 
 small_blue = {
-    '0' : madFonts.small0,
-    '1' : madFonts.small1,
-    '2' : madFonts.small2,
-    '3' : madFonts.small3,
-    '4' : madFonts.small4,
-    '5' : madFonts.small5,
-    '6' : madFonts.small6,
-    '7' : madFonts.small7,
-    '8' : madFonts.small8,
-    '9' : madFonts.small9,
-    '.' : madFonts.small_dot,
-    ':' : madFonts.small_colon,
-    '°' : madFonts.small_degree,
-    '%' : madFonts.small_percent,
-    ' ' : madFonts.small_space,
-    '~' : madFonts.pixel_black,
+    '0' : characters.small0,
+    '1' : characters.small1,
+    '2' : characters.small2,
+    '3' : characters.small3,
+    '4' : characters.small4,
+    '5' : characters.small5,
+    '6' : characters.small6,
+    '7' : characters.small7,
+    '8' : characters.small8,
+    '9' : characters.small9,
+    '.' : characters.small_dot,
+    ':' : characters.small_colon,
+    '°' : characters.small_degree,
+    '%' : characters.small_percent,
+    ' ' : characters.small_space,
+    '~' : characters.pixel_black,
 }
 
 big_yellow = {}
@@ -178,34 +180,16 @@ def read_sensor():
     return t_degC, rh_pRH
 
 ##=============================================================================
-def sync_time_NTP():
-    '''
-    Synchronize via NTP.
-    '''
-    try:
-        print('\n>> syncing with NTP ...')
-        ## check connection status, and (re-)connect if required
-        wlan_util.connect()
-
-        ## get time
-        # print('<< NTP timestamp:', ntptime.time())
-        ## set time
-        ntptime.settime()
-        print('<< NTP timestamp:', time.time())
-        return True
-
-    except:
-        print('!! NTP synchronization failed!')
-        return False
-
-##=============================================================================
-def set_clock():
+def set_clock(timestamp=None):
     '''
     Update the time display.
     '''
     ##-------------------------------------------------------------------------
     ## assemble time and sensor strings
-    localtime = datetime_util.cettime(ts_clocktick)
+    if not timestamp:
+        timestamp = ts_clocktick
+        
+    localtime = datetime_util.cettime(timestamp)
     # if len(localtime) == 8:
     #     ## MicroPython
     #     year, month, mday, hour, minute, second, weekday, yearday = localtime
@@ -219,9 +203,7 @@ def set_clock():
     # time_str = "{:02d}:{:02d}.{:02d}".format(hour, minute, second)
     time_str = "{:02d}:{:02d}".format(hour, minute)
     sensor_str = "{:4.1f}~° {:4.1f}~%".format(temp, hum)
-
-    ## DEBUG
-    print("{} > {} / {}".format(localtime[3:6], time_str, sensor_str))
+    print("{} / {}".format(time_str, sensor_str))
 
     ##-------------------------------------------------------------------------
     ## use darkmode during night time
@@ -271,6 +253,43 @@ def set_clock():
         col += len(img[0]) + 1
 
 ##-----------------------------------------------------------------------------
+async def _set_clock(lock):
+    '''
+    Scheduler to update the time display.
+    '''
+    while True:
+        print("{:02d}.{:02d}:{:02d}".format(*time.localtime(ts_clocktick)[3:6]))
+        ## DEBUG
+        # print(ts_clocktick % 60)
+        ## TODO: show full timestamp when flickerfree
+        if ts_clocktick % 60 == 0:
+            await lock.acquire()
+            set_clock()
+            lock.release()
+        await asyncio.sleep(1)
+        
+##=============================================================================
+def sync_time_NTP():
+    '''
+    Synchronize via NTP.
+    '''
+    try:
+        print('\n>> syncing with NTP ...')
+        ## check connection status, and (re-)connect if required
+        wlan_util.connect()
+
+        ## get time
+        # print('<< NTP timestamp:', ntptime.time())
+        ## set time
+        ntptime.settime()
+        print('<< NTP timestamp:', time.time())
+        return True
+
+    except:
+        print('!! NTP synchronization failed!')
+        return False
+
+##-----------------------------------------------------------------------------
 async def _sync_time_NTP(lock):
     '''
     Scheduler to synchronize via NTP.
@@ -286,26 +305,13 @@ async def _sync_time_NTP(lock):
                     ts_clocktick = time.time()
                     ts_ntpsync = ts_clocktick
                     #print(datetime_util.cettime(ts_clocktick))
+                    
+                    ## update clock immediately after NTP sync
                     set_clock()
                     break
             lock.release()
 
         await asyncio.sleep(5)
-
-##-----------------------------------------------------------------------------
-async def _set_clock(lock):
-    '''
-    Scheduler to update the time display.
-    '''
-    while True:
-        ## DEBUG
-        # print(ts_clocktick % 60)
-        ## TODO: show full timestamp when flickerfree
-        if ts_clocktick % 60 == 0:
-            await lock.acquire()
-            set_clock()
-            lock.release()
-        await asyncio.sleep(1)
 
 ##-----------------------------------------------------------------------------
 async def _refresh_display(lock):
@@ -324,6 +330,7 @@ def _clocktick(timer):
     Timed function to add one second.
     '''
     global ts_clocktick
+
     ts_clocktick += 1
 
 ##=============================================================================
