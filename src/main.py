@@ -4,7 +4,7 @@
 Created on Mon Feb 13 12:41:46 2023
 
 @author: mada
-@version: 2023-03-06
+@version: 2023-06-30
 
 MatrixClock - an ESP32 driven HUB75 LED matrix clock.
 * Synchronization with NTP.
@@ -188,7 +188,7 @@ def set_clock(timestamp=None):
     ## assemble time and sensor strings
     if not timestamp:
         timestamp = ts_clocktick
-        
+
     localtime = datetime_util.cettime(timestamp)
     # if len(localtime) == 8:
     #     ## MicroPython
@@ -197,12 +197,18 @@ def set_clock(timestamp=None):
     #     ## CPython
     #     year, month, mday, hour, minute, second, weekday, yearday, dst = localtime
     hour, minute, second = localtime[3:6]
-    temp, hum = read_sensor()
+    try:
+        temp, hum = read_sensor()
+    except:
+        temp, hum = None, None
 
     ## TODO: show full timestamp when flickerfree
     # time_str = "{:02d}:{:02d}.{:02d}".format(hour, minute, second)
     time_str = "{:02d}:{:02d}".format(hour, minute)
-    sensor_str = "{:4.1f}~° {:4.1f}~%".format(temp, hum)
+    try:
+        sensor_str = "{:4.1f}~° {:4.1f}~%".format(temp, hum)
+    except:
+        sensor_str = ' '
     print("{} / {}".format(time_str, sensor_str))
 
     ##-------------------------------------------------------------------------
@@ -262,12 +268,12 @@ async def _set_clock(lock):
         ## DEBUG
         # print(ts_clocktick % 60)
         ## TODO: show full timestamp when flickerfree
-        if ts_clocktick % 60 == 0:
+        if ts_clocktick % 30 == 0:  # 2023-06-30: update every 30secs
             await lock.acquire()
             set_clock()
             lock.release()
         await asyncio.sleep(1)
-        
+
 ##=============================================================================
 def sync_time_NTP():
     '''
@@ -305,7 +311,7 @@ async def _sync_time_NTP(lock):
                     ts_clocktick = time.time()
                     ts_ntpsync = ts_clocktick
                     #print(datetime_util.cettime(ts_clocktick))
-                    
+
                     ## update clock immediately after NTP sync
                     set_clock()
                     break
