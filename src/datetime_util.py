@@ -1,7 +1,8 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """
+Useful clock related functions.
+
 @author: mada
 @version: 2023-03-03
 """

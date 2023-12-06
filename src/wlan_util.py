@@ -1,12 +1,13 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """
-@author: mada
-@version: 2023-02-28
+Initialization of the ESP Wifi interface.
 
 https://forum.micropython.org/viewtopic.php?t=2440
 https://forum.micropython.org/viewtopic.php?t=2951
+
+@author: mada
+@version: 2023-02-28
 """
 
 ## system modules
