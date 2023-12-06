@@ -1,20 +1,20 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
 """
-Created on Fri Feb  3 09:33:24 2023
+Main script to demo I2C readout of Sensirion SHT40 w/ NodeMCU ESP8266.
 
 @author: mada
 @version: 2023-02-20
-
-Minimum example for I2C readout of Sensirion SHT40 w/ NodeMCU ESP8266.
 """
 
 ## system modules
 import time
-from machine import I2C, SoftI2C
+from machine import I2C
+# from machine import SoftI2C
 from machine import Pin
 import uos
 import sys
+
 ##*****************************************************************************
 ##*****************************************************************************
 

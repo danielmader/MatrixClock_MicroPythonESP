@@ -1,12 +1,10 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
 """
-Created on Mon Feb 13 12:41:46 2023
+Minimum example for basic control of a HUB75 LED matrix (WaveShare 64x32) w/ NodeMCU ESP32.
 
 @author: mada
 @version: 2023-02-13
-
-Minimum example for basic control of a HUB75 LED matrix (WaveShare 64x32) w/ NodeMCU ESP32.
 """
 
 ## system modules
@@ -64,12 +62,12 @@ OE = Pin(17, Pin.OUT)
 ##=============================================================================
 def reset():
     '''
-    Initialize all pins as low; disable output.    
+    Initialize all pins as low; disable output.
 
     Returns
     -------
     None.
-    
+
     '''
     print(">>>> Reset color and row select pins ...")
     R1.value(0)
@@ -87,7 +85,7 @@ def reset():
     #OE.value(1)  # disable output
     CLK.value(0)
     LAT.value(0)
-           
+
 ##=============================================================================
 def set_color(rgb1, rgb2):
     '''
@@ -112,8 +110,8 @@ def set_color(rgb1, rgb2):
     G2.value(rgb2[1])
     B2.value(rgb2[2])
 
-##-----------------------------------------------------------------------------    
-## 1) 
+##-----------------------------------------------------------------------------
+## 1)
 '''
 https://www.bigmessowires.com/2018/05/24/64-x-32-led-matrix-programming/
 
@@ -173,7 +171,7 @@ for i in range(10):
         # print('D', D.value())
         # print('E', E.value())
         OE.value(0)   # f) re-enable output
-    
+
         time.sleep_ms(20)
     #time.sleep(1)
 
@@ -225,8 +223,8 @@ for _ in range(50):
             set_color(colors[i], colors[i])
             CLK.value(1)
             CLK.value(0)
-        ## 2) Pull the latch and output enable pins high. 
-        ## This enables the latch, allowing the row data to reach the output driver 
+        ## 2) Pull the latch and output enable pins high.
+        ## This enables the latch, allowing the row data to reach the output driver
         ## but it also disables the output so that no LEDs are lit while we're switching rows.
         LAT.value(1)
         OE.value(1)
@@ -242,8 +240,8 @@ for _ in range(50):
         # print('C', C.value())
         # print('D', D.value())
         # print('E', E.value())
-        ## 4) Pull the latch and output enable pins low again, 
-        ## enabling the output and closing the latch 
+        ## 4) Pull the latch and output enable pins low again,
+        ## enabling the output and closing the latch
         ## so we can clock in the next row of data.
         LAT.value(0)
         OE.value(0)

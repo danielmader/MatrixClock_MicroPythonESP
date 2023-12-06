@@ -1,7 +1,7 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
 """
-Created on Thu Mar  2 20:34:55 2023
+Main script for bare clock function w/ NTP over Wifi.
 
 @author: mada
 @version: 2023-03-02

@@ -1,3 +1,9 @@
+"""
+Main script to demo the HUB75 library.
+
+Uses a custom pinout.
+"""
+
 import hub75
 import matrixdata
 from logo import logo

@@ -1,7 +1,7 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
 """
-Created on Sun Feb 26 08:37:30 2023
+Main script to demo HUB75 refresh rate.
 
 @author: mada
 @version: 2023-03-01
@@ -15,6 +15,9 @@ import _thread
 from machine import Timer
 
 import time
+
+##*****************************************************************************
+##*****************************************************************************
 
 config = hub75.Hub75SpiConfiguration()
 ##-----------------------------------------------------------------------------

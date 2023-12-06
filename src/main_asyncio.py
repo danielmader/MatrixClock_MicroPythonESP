@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Mar  1 10:51:27 2023
 
-@author: ChatGPT+mada
+"""
+Main script to demo threading with asyncio.
 
 https://github.com/peterhinch/micropython-async/
 https://glyph.twistedmatrix.com/2014/02/unyielding.html
+
+@author: ChatGPT+mada
+@version: 2023-03-02
 """
 
 try:

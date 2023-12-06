@@ -1,14 +1,12 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
 """
-Created on Mon Feb 13 12:41:46 2023
-
-@author: mada
-@version: 2023-06-30
-
 MatrixClock - an ESP32 driven HUB75 LED matrix clock.
 * Synchronization with NTP.
 * Temperature/humidity ambient sensor (Sensirion SHT40).
+
+@author: mada
+@version: 2023-12-06
 """
 
 ## system modules
@@ -94,6 +92,7 @@ big_blue = {
     ':' : characters.big_colon,
     '°' : characters.big_degree,
     '%' : characters.big_percent,
+    '-' : characters.big_dash,
     ' ' : characters.big_space,
     '~' : characters.pixel_black,
 }
@@ -113,6 +112,7 @@ small_blue = {
     ':' : characters.small_colon,
     '°' : characters.small_degree,
     '%' : characters.small_percent,
+    '-' : characters.small_dash,
     ' ' : characters.small_space,
     '~' : characters.pixel_black,
 }
@@ -158,8 +158,8 @@ def read_sensor():
 
     Returns
     -------
-    t_degC : float
-    rh_pRH : float
+    * t_degC : float
+    * rh_pRH : float
     '''
     # print ("\n>> reading sensor data ...")
     mode =  modes[1]  # NOHEAT_HIGHPRECISION
@@ -182,7 +182,7 @@ def read_sensor():
 ##=============================================================================
 def set_clock(timestamp=None):
     '''
-    Update the time display.
+    Update the display readings.
     '''
     ##-------------------------------------------------------------------------
     ## assemble time and sensor strings
@@ -208,7 +208,7 @@ def set_clock(timestamp=None):
     try:
         sensor_str = "{:4.1f}~° {:4.1f}~%".format(temp, hum)
     except:
-        sensor_str = ' '
+        sensor_str = '----- -----'
     print("{} / {}".format(time_str, sensor_str))
 
     ##-------------------------------------------------------------------------
@@ -261,14 +261,15 @@ def set_clock(timestamp=None):
 ##-----------------------------------------------------------------------------
 async def _set_clock(lock):
     '''
-    Scheduler to update the time display.
+    Scheduler to update the display readings.
     '''
     while True:
         print("{:02d}.{:02d}:{:02d}".format(*time.localtime(ts_clocktick)[3:6]))
         ## DEBUG
         # print(ts_clocktick % 60)
         ## TODO: show full timestamp when flickerfree
-        if ts_clocktick % 30 == 0:  # 2023-06-30: update every 30secs
+        # if ts_clocktick % 30 == 0:  # 2023-06-30: update every 30secs
+        if ts_clocktick % 10 == 0:  # 2023-12-06: update every 10secs
             await lock.acquire()
             set_clock()
             lock.release()

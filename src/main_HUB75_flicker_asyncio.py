@@ -1,7 +1,7 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
 """
-Created on Sun Feb 26 08:37:30 2023
+Main script to demo HUB75 refresh rate with asyncio threading.
 
 @author: mada
 @version: 2023-03-06
@@ -12,6 +12,9 @@ import matrixdata
 
 import uasyncio as asyncio
 import utime as time
+
+##*****************************************************************************
+##*****************************************************************************
 
 config = hub75.Hub75SpiConfiguration()
 ##-----------------------------------------------------------------------------
@@ -78,7 +81,7 @@ rect_64x32_w = [ [7] * 64] * 32
 rect_64x32_r = [ [4] * 64] * 32
 rect_64x32_g = [ [2] * 64] * 32
 rect_64x32_b = [ [1] * 64] * 32
-      
+
 ##-----------------------------------------------------------------------------
 async def setpixel1(lock):
     '''
@@ -109,7 +112,7 @@ async def setpixel1(lock):
 
         ## release lock
         lock.release()
-        
+
         await asyncio.sleep(0)  # round-robin scheduling
 
 ##-----------------------------------------------------------------------------
@@ -121,13 +124,13 @@ async def setpixel2(lock):
     for pattern in (rect_64x32_r, rect_64x32_g, rect_64x32_b, rect_64x32_w):
         ## wait for released lock
         await lock.acquire()
-        
+
         matrix.clear_all_bytes()
         matrix.set_pixels(0,0, pattern)
-        
+
         ## release lock
         lock.release()
-        
+
         await asyncio.sleep(15)  # pause for 15s
 
 ##-----------------------------------------------------------------------------
@@ -144,15 +147,15 @@ async def main():
     lock = asyncio.Lock()
 
     ## create co-routines (cooperative tasks)
-    asyncio.create_task(refresh(lock))   
+    asyncio.create_task(refresh(lock))
 
     ## 1) demonstrate speed of clear*() methods
     task1 = asyncio.create_task(setpixel1(lock))
     await asyncio.sleep(20)  # pause for 20s
     task1.cancel()
-    
+
     ## 2) show general flicker even without parallel tasks
-    task2 = asyncio.create_task(setpixel2(lock))      
+    task2 = asyncio.create_task(setpixel2(lock))
     await asyncio.sleep(60)  # pause for 60s
     task2.cancel()
     print("\n>> Done.")
