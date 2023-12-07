@@ -27,7 +27,7 @@ debug_mode = False
 # debug_mode = True
 
 ## NTP sync interval ----------------------------------------------------------
-ntp_interval = 15 # 3600s = 60min = 1h
+ntp_interval = 15  # 3600s = 60min = 1h
 ts_ntpsync = 0
 if debug_mode:
     ## start at 05:59:00 UTC = 06:59:00 CET ...
@@ -38,6 +38,7 @@ else:
 
 ##*****************************************************************************
 ##*****************************************************************************
+
 
 ##=============================================================================
 def sync_time_NTP():
@@ -56,9 +57,10 @@ def sync_time_NTP():
         print('<< NTP timestamp:', time.time())
         return True
 
-    except:
+    except Exception:
         print('!! NTP synchronization failed!')
         return False
+
 
 ##-----------------------------------------------------------------------------
 async def _scheduled_sync(lock):
@@ -81,6 +83,7 @@ async def _scheduled_sync(lock):
 
         await asyncio.sleep(5)
 
+
 ##-----------------------------------------------------------------------------
 async def _refresh_display(lock):
     '''
@@ -91,6 +94,7 @@ async def _refresh_display(lock):
         print("\t\t\trefresh...")
         lock.release()
         await asyncio.sleep_ms(100)
+
 
 ##-----------------------------------------------------------------------------
 async def _set_clock(lock):
@@ -123,6 +127,7 @@ async def _set_clock(lock):
 
         await asyncio.sleep(1)
 
+
 ##-----------------------------------------------------------------------------
 def _clocktick(timer):
     '''
@@ -130,6 +135,7 @@ def _clocktick(timer):
     '''
     global ts_clocktick
     ts_clocktick += 1
+
 
 ##=============================================================================
 async def main():

@@ -22,6 +22,7 @@ from creds import creds_dict  # credentials of trusted APs
 ap = None
 wlan = None
 
+
 ##=============================================================================
 def init():
     '''
@@ -48,7 +49,7 @@ def init():
     wlan.active(True)
     try:
         wlan.config(reconnects=5)  # ESP32 only
-    except:
+    except Exception:
         pass
 
     ## auto-connect to last network (ESP8266 standard behavior)
@@ -60,12 +61,14 @@ def init():
     else:
         print("<< network established:", wlan.ifconfig())
 
+
 ##=============================================================================
 def isconnected():
     '''
     Wrapper function to check connection status of station interface.
     '''
     return wlan.isconnected()
+
 
 ##=============================================================================
 def connect():
@@ -93,7 +96,7 @@ def connect():
         if ap_list != []:
             print("== trusted networks:")
             for ii, ap in enumerate(ap_list):
-                print('\t# %i/%i - %r' % (ii+1, len(ap_list), ap))
+                print('\t# %i/%i - %r' % (ii + 1, len(ap_list), ap))
 
             ## try to connect to networks
             for ap in ap_list:
@@ -109,6 +112,7 @@ def connect():
                     print('## network config:', wlan.ifconfig())
                     return
             print('!! connection failed!')
+
 
 ##=============================================================================
 if __name__ == '__main__':

@@ -59,6 +59,7 @@ CLK = Pin(18, Pin.OUT)
 LAT = Pin(5,  Pin.OUT)
 OE = Pin(17, Pin.OUT)
 
+
 ##=============================================================================
 def reset():
     '''
@@ -86,6 +87,7 @@ def reset():
     CLK.value(0)
     LAT.value(0)
 
+
 ##=============================================================================
 def set_color(rgb1, rgb2):
     '''
@@ -110,6 +112,7 @@ def set_color(rgb1, rgb2):
     G2.value(rgb2[1])
     B2.value(rgb2[2])
 
+
 ##-----------------------------------------------------------------------------
 ## 1)
 '''
@@ -129,31 +132,31 @@ https://www.bigmessowires.com/2018/05/24/64-x-32-led-matrix-programming/
 12. Repeat steps 3-11 HEIGHT/2 times for the remaining rows.
 '''
 reset()
+# while True:
 for i in range(10):
-#while True:
     for row in range(16):
         for col in range(64):
             if i % 3 == 0:
                 if col < 21:
-                    set_color((1,0,0), (0,0,1))
+                    set_color((1,0,0), (0,0,1))  # noqa
                 elif col < 41:
-                    set_color((0,1,0), (1,0,0))
+                    set_color((0,1,0), (1,0,0))  # noqa
                 else:
-                    set_color((0,0,1), (0,1,0))
+                    set_color((0,0,1), (0,1,0))  # noqa
             elif i % 3 == 1:
                 if col < 21:
-                    set_color((0,0,1), (0,1,0))
+                    set_color((0,0,1), (0,1,0))  # noqa
                 elif col < 41:
-                    set_color((1,0,0), (0,0,1))
+                    set_color((1,0,0), (0,0,1))  # noqa
                 else:
-                    set_color((0,1,0), (1,0,0))
+                    set_color((0,1,0), (1,0,0))  # noqa
             elif i % 3 == 2:
                 if col < 21:
-                    set_color((0,1,0), (1,0,0))
+                    set_color((0,1,0), (1,0,0))  # noqa
                 elif col < 41:
-                    set_color((0,0,1), (0,1,0))
+                    set_color((0,0,1), (0,1,0))  # noqa
                 else:
-                    set_color((1,0,0), (0,0,1))
+                    set_color((1,0,0), (0,0,1))  # noqa
             CLK.value(1)  # a) CLK hi to shift in the color bit
             CLK.value(0)  # b) CLK lo to shift in the color bit
         OE.value(1)   # c) disable output
@@ -181,42 +184,45 @@ for i in range(10):
 (https://www.sparkfun.com/news/2650
 For each row of pixels, we repeat the following cycle of steps:
 1. Clock in the data for the current row one bit at a time
-2. Pull the latch and output enable pins high. This enables the latch, allowing the row data to reach the output driver but it also disables the output so that no LEDs are lit while we're switching rows.
+2. Pull the latch and output enable pins high. This enables the latch,
+   allowing the row data to reach the output driver but it also disables the output
+   so that no LEDs are lit while we're switching rows.
 3. Switch rows by driving the appropriate row select lines.
-4. Pull the latch and output enable pins low again, enabling the output and closing the latch so we can clock in the next row of data.
+4. Pull the latch and output enable pins low again, enabling the output and
+   closing the latch so we can clock in the next row of data.
 '''
 colors = [
-    (1,0,1), (1,1,0), (0,1,1),
-    (1,0,1), (1,1,0), (0,1,1),
-    (1,0,1), (1,1,0), (0,1,1),
-    (1,0,1), (1,1,0), (0,1,1),
-    (1,0,1), (1,1,0), (0,1,1),
-    (1,0,1), (1,1,0), (0,1,1),
-    (1,0,1), (1,1,0), (0,1,1),
-    (1,0,1), (1,1,0), (0,1,1),
-    (1,0,1), (1,1,0), (0,1,1),
-    (1,0,1), (1,1,0), (0,1,1),
-    (1,0,1), (1,1,0), (0,1,1),
-    (1,0,1), (1,1,0), (0,1,1),
-    (1,0,1), (1,1,0), (0,1,1),
-    (1,0,1), (1,1,0), (0,1,1),
-    (1,0,1), (1,1,0), (0,1,1),
-    (1,0,1), (1,1,0), (0,1,1),
-    (1,0,1), (1,1,0), (0,1,1),
-    (1,0,1), (1,1,0), (0,1,1),
-    (1,0,1), (1,1,0), (0,1,1),
-    (1,0,1), (1,1,0), (0,1,1),
-    (1,0,1), (1,1,0), (0,1,1),
-    (1,0,1)
-]
+    (1,0,1), (1,1,0), (0,1,1),  # noqa
+    (1,0,1), (1,1,0), (0,1,1),  # noqa
+    (1,0,1), (1,1,0), (0,1,1),  # noqa
+    (1,0,1), (1,1,0), (0,1,1),  # noqa
+    (1,0,1), (1,1,0), (0,1,1),  # noqa
+    (1,0,1), (1,1,0), (0,1,1),  # noqa
+    (1,0,1), (1,1,0), (0,1,1),  # noqa
+    (1,0,1), (1,1,0), (0,1,1),  # noqa
+    (1,0,1), (1,1,0), (0,1,1),  # noqa
+    (1,0,1), (1,1,0), (0,1,1),  # noqa
+    (1,0,1), (1,1,0), (0,1,1),  # noqa
+    (1,0,1), (1,1,0), (0,1,1),  # noqa
+    (1,0,1), (1,1,0), (0,1,1),  # noqa
+    (1,0,1), (1,1,0), (0,1,1),  # noqa
+    (1,0,1), (1,1,0), (0,1,1),  # noqa
+    (1,0,1), (1,1,0), (0,1,1),  # noqa
+    (1,0,1), (1,1,0), (0,1,1),  # noqa
+    (1,0,1), (1,1,0), (0,1,1),  # noqa
+    (1,0,1), (1,1,0), (0,1,1),  # noqa
+    (1,0,1), (1,1,0), (0,1,1),  # noqa
+    (1,0,1), (1,1,0), (0,1,1),  # noqa
+    (1,0,1)                     # noqa
+    ]
 
-colors = [(0,0,0)] * 63 + [(1,0,0)]
-colors = [(0,0,0)] * 63 + [(0,1,0)]
-colors = [(0,0,0)] * 63 + [(0,0,1)]
+colors = [(0,0,0)] * 63 + [(1,0,0)]  # noqa
+colors = [(0,0,0)] * 63 + [(0,1,0)]  # noqa
+colors = [(0,0,0)] * 63 + [(0,0,1)]  # noqa
 
 reset()
-for _ in range(50):
 #while True:
+for _ in range(50):
     for row in range(16):
         ## 1) Clock in the data for the current row one bit at a time
         for i, col in enumerate(range(64)):
@@ -247,5 +253,5 @@ for _ in range(50):
         OE.value(0)
 
 ##-----------------------------------------------------------------------------
-
 print("\n<<<< Done.\n")
+##-----------------------------------------------------------------------------

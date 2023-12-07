@@ -221,12 +221,16 @@ except ModuleNotFoundError:
 from machine import Timer
 
 ts_clocktick = time.time()
+
+
 def clocktick(timer):
     global ts_clocktick
     ts_clocktick += 1
 
+
 tim = Timer(0)
 tim.init(period=1000, mode=Timer.PERIODIC, callback=clocktick)
+
 
 async def task(i, lock):
     while True:
@@ -236,6 +240,7 @@ async def task(i, lock):
         lock.release()
         await asyncio.sleep(0)
 
+
 async def update(lock):
     while True:
         await lock.acquire()
@@ -243,6 +248,7 @@ async def update(lock):
         time.sleep(0.2)
         lock.release()
         await asyncio.sleep(1)
+
 
 async def main():
     ## create the Lock instance
@@ -252,6 +258,7 @@ async def main():
     asyncio.create_task(update(lock))
 
     await asyncio.sleep(5)  # run for 5s
+
 
 asyncio.run(main())
 

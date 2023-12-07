@@ -53,7 +53,7 @@ for dev in i2c_devs:
         sys.exit()
 
 ##-----------------------------------------------------------------------------
-print ("\n>> getting the unique 32-bit serial number ...")
+print("\n>> getting the unique 32-bit serial number ...")
 mode = modes[0]
 i2c.writeto(dev, bytearray([mode[1]]))
 time.sleep(mode[-1])
@@ -71,7 +71,7 @@ print('>', seno)
 #print(ustruct.unpack(fmt, rx_bytes))
 
 ##-----------------------------------------------------------------------------
-print ("\n>> reading measurement values ...")
+print("\n>> reading measurement values ...")
 mode =  modes[1]  # NOHEAT_HIGHPRECISION
 i2c.writeto(dev, bytearray([mode[1]]))
 time.sleep(mode[-1])
@@ -79,8 +79,8 @@ rx_bytes = i2c.readfrom(dev, 6)
 print('>', rx_bytes, len(rx_bytes))
 t_ticks = rx_bytes[0] * 256 + rx_bytes[1]
 rh_ticks = rx_bytes[3] * 256 + rx_bytes[4]
-t_degC = -45 + 175 * t_ticks/65535  # 2^16 - 1 = 65535
-rh_pRH = -6 + 125 * rh_ticks/65535
+t_degC = -45 + 175 * t_ticks / 65535  # 2^16 - 1 = 65535
+rh_pRH = -6 + 125 * rh_ticks / 65535
 if (rh_pRH > 100):
     rh_pRH = 100
 if (rh_pRH < 0):

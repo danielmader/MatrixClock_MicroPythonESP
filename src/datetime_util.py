@@ -15,6 +15,7 @@ except ModuleNotFoundError:
 ##*****************************************************************************
 ##*****************************************************************************
 
+
 ##=============================================================================
 def _daylightSavingOffset(ts_utc=time.time()):
     '''
@@ -26,10 +27,10 @@ def _daylightSavingOffset(ts_utc=time.time()):
         daylight saving offset in seconds
     '''
     year = time.localtime(ts_utc)[0]  # get current year
-    HHMarch   = time.mktime((year,  3, (31 - (int(5*year/4+4)) % 7), 1,0,0,0,0,0))  # Time of March change to CEST
-    HHOctober = time.mktime((year, 10, (31 - (int(5*year/4+1)) % 7), 1,0,0,0,0,0))  # Time of October change to CET
+    HHMarch   = time.mktime((year,  3, (31 - (int(5 * year / 4 + 4)) % 7), 1,0,0,0,0,0))  # noqa # Time of March change to CEST
+    HHOctober = time.mktime((year, 10, (31 - (int(5 * year / 4 + 1)) % 7), 1,0,0,0,0,0))  # noqa # Time of October change to CET
 
-    if ts_utc< HHMarch:
+    if ts_utc < HHMarch:
         ## we are before last Sunday of March
         offset = 3600  # CET: UTC+1H
     elif ts_utc < HHOctober:
@@ -40,6 +41,7 @@ def _daylightSavingOffset(ts_utc=time.time()):
         offset = 3600  # CEST: UTC+1H
 
     return offset
+
 
 ##=============================================================================
 def cettime(ts_utc=time.time()):
@@ -63,6 +65,7 @@ def cettime(ts_utc=time.time()):
 
     return ts_cet
 
+
 ##=============================================================================
 def localtime_toString(localtime):
     '''
@@ -83,7 +86,7 @@ def localtime_toString(localtime):
         4 : "Fri",
         5 : "Sat",
         6 : "Sun"
-    }
+        }
     months = {
         1 : "Jan",
         2 : "Feb",
@@ -97,7 +100,7 @@ def localtime_toString(localtime):
         10 : "Oct",
         11 : "Nov",
         12 : "Dec"
-    }
+        }
     len_lt = len(localtime)
     if len_lt == 8:
         ## MicroPython
@@ -112,6 +115,7 @@ def localtime_toString(localtime):
     except Exception:
         datestr = ''
     return timestr, datestr
+
 
 ##=============================================================================
 def get_timetuple(short_time_tuple):
@@ -139,13 +143,14 @@ def get_timetuple(short_time_tuple):
     '''
     year, month, day, hour, minute, second = short_time_tuple
     days_since_jan1 = (31, 28 + (year % 4 == 0), 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
-    day_of_year = sum(days_since_jan1[:month-1]) + day
+    day_of_year = sum(days_since_jan1[:month - 1]) + day
     days_since_1900 = (year - 1900) * 365 + (year - 1901) // 4 + day_of_year - 1
     days_since_1970 = days_since_1900 - 25568
     day_of_week = (days_since_1970 + 4) % 7
     # seconds_since_midnight = hour * 3600 + minute * 60 + second
 
     return year, month, day, hour, minute, second, day_of_week, day_of_year, -1
+
 
 ##*****************************************************************************
 ##*****************************************************************************

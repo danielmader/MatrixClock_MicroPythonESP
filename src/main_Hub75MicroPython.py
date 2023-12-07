@@ -45,24 +45,25 @@ for i in range(100):
     hub75spi.display_data()
 
 # Show bouncing objects
-earth_bounce = bouncer.Bouncer(0, 0, len(earth[0]), len(earth), COL_SIZE-1, ROW_SIZE-1, dx=2)
-saturn_bounce = bouncer.Bouncer(20, 10, len(saturn[0]), len(saturn), COL_SIZE-1, ROW_SIZE-1, dx=-2)
+earth_bounce = bouncer.Bouncer(0, 0, len(earth[0]), len(earth), COL_SIZE - 1, ROW_SIZE - 1, dx=2)
+saturn_bounce = bouncer.Bouncer(20, 10, len(saturn[0]), len(saturn), COL_SIZE - 1, ROW_SIZE - 1, dx=-2)
 square = [
-    [1,1,2,2,3,3,4,4,5,5,6,6,7,7],
-    [1,1,2,2,3,3,4,4,5,5,6,6,7,7],
-    [1,1,2,2,3,3,4,4,5,5,6,6,7,7],
-    [1,1,2,2,3,3,4,4,5,5,6,6,7,7],
-    [1,1,2,2,3,3,4,4,5,5,6,6,7,7],
-    [1,1,2,2,3,3,4,4,5,5,6,6,7,7],
-    [1,1,2,2,3,3,4,4,5,5,6,6,7,7],
-    [1,1,2,2,3,3,4,4,5,5,6,6,7,7],
-    [1,1,2,2,3,3,4,4,5,5,6,6,7,7],
-    [1,1,2,2,3,3,4,4,5,5,6,6,7,7],
-    [1,1,2,2,3,3,4,4,5,5,6,6,7,7],
-    [1,1,2,2,3,3,4,4,5,5,6,6,7,7],
-    [1,1,2,2,3,3,4,4,5,5,6,6,7,7],
-    [1,1,2,2,3,3,4,4,5,5,6,6,7,7]]
-square_bounce = bouncer.Bouncer(0,0, width=len(square[0]), height=len(square), max_x=63, max_y=31, min_x=0, min_y=0, dx=1, dy=1)
+    [1,1,2,2,3,3,4,4,5,5,6,6,7,7],  # noqa
+    [1,1,2,2,3,3,4,4,5,5,6,6,7,7],  # noqa
+    [1,1,2,2,3,3,4,4,5,5,6,6,7,7],  # noqa
+    [1,1,2,2,3,3,4,4,5,5,6,6,7,7],  # noqa
+    [1,1,2,2,3,3,4,4,5,5,6,6,7,7],  # noqa
+    [1,1,2,2,3,3,4,4,5,5,6,6,7,7],  # noqa
+    [1,1,2,2,3,3,4,4,5,5,6,6,7,7],  # noqa
+    [1,1,2,2,3,3,4,4,5,5,6,6,7,7],  # noqa
+    [1,1,2,2,3,3,4,4,5,5,6,6,7,7],  # noqa
+    [1,1,2,2,3,3,4,4,5,5,6,6,7,7],  # noqa
+    [1,1,2,2,3,3,4,4,5,5,6,6,7,7],  # noqa
+    [1,1,2,2,3,3,4,4,5,5,6,6,7,7],  # noqa
+    [1,1,2,2,3,3,4,4,5,5,6,6,7,7],  # noqa
+    [1,1,2,2,3,3,4,4,5,5,6,6,7,7],  # noqa
+    ]
+square_bounce = bouncer.Bouncer(0,0, width=len(square[0]), height=len(square), max_x=63, max_y=31, min_x=0, min_y=0, dx=1, dy=1)  # noqa
 
 while True:
     print('>> clear_dirty_bytes()')

@@ -37,7 +37,7 @@ debug_mode = False
 # debug_mode = True
 
 ## NTP sync interval ----------------------------------------------------------
-ntp_interval = 3600 * 12 # 3600s = 60min = 1h
+ntp_interval = 3600 * 12  # 3600s = 60min = 1h
 ts_ntpsync = 0
 
 ## init clock -----------------------------------------------------------------
@@ -91,11 +91,12 @@ big_blue = {
     '.' : characters.big_dot,
     ':' : characters.big_colon,
     '°' : characters.big_degree,
+    'C' : characters.big_degreeC,
     '%' : characters.big_percent,
     '-' : characters.big_dash,
     ' ' : characters.big_space,
     '~' : characters.pixel_black,
-}
+    }
 
 small_blue = {
     '0' : characters.small0,
@@ -111,22 +112,23 @@ small_blue = {
     '.' : characters.small_dot,
     ':' : characters.small_colon,
     '°' : characters.small_degree,
+    'C' : characters.small_degreeC,
     '%' : characters.small_percent,
     '-' : characters.small_dash,
     ' ' : characters.small_space,
     '~' : characters.pixel_black,
-}
+    }
 
 big_yellow = {}
 for char in big_blue:
     big_yellow[char] = []
-    for i,row in enumerate(big_blue[char]):
+    for i, row in enumerate(big_blue[char]):
         row = [col * 6 for col in row]  # yellow
         big_yellow[char].append(row)
 small_yellow = {}
 for char in small_blue:
     small_yellow[char] = []
-    for i,row in enumerate(small_blue[char]):
+    for i, row in enumerate(small_blue[char]):
         row = [col * 6 for col in row]  # yellow
         small_yellow[char].append(row)
 
@@ -151,6 +153,7 @@ sht40 = i2c_devs[0]
 ##*****************************************************************************
 ##*****************************************************************************
 
+
 ##=============================================================================
 def read_sensor():
     '''
@@ -169,8 +172,8 @@ def read_sensor():
     # print('>', rx_bytes, len(rx_bytes))
     t_ticks = rx_bytes[0] * 256 + rx_bytes[1]
     rh_ticks = rx_bytes[3] * 256 + rx_bytes[4]
-    t_degC = -45 + 175 * t_ticks/65535  # 2^16 - 1 = 65535
-    rh_pRH = -6 + 125 * rh_ticks/65535
+    t_degC = -45 + 175 * t_ticks / 65535  # 2^16 - 1 = 65535
+    rh_pRH = -6 + 125 * rh_ticks / 65535
     if (rh_pRH > 100):
         rh_pRH = 100
     if (rh_pRH < 0):
@@ -178,6 +181,7 @@ def read_sensor():
     # print('> temperature:', t_degC)
     # print('> humidity:', rh_pRH)
     return t_degC, rh_pRH
+
 
 ##=============================================================================
 def set_clock(timestamp=None):
@@ -199,15 +203,15 @@ def set_clock(timestamp=None):
     hour, minute, second = localtime[3:6]
     try:
         temp, hum = read_sensor()
-    except:
+    except Exception:
         temp, hum = None, None
 
     ## TODO: show full timestamp when flickerfree
     # time_str = "{:02d}:{:02d}.{:02d}".format(hour, minute, second)
     time_str = "{:02d}:{:02d}".format(hour, minute)
     try:
-        sensor_str = "{:4.1f}~° {:4.1f}~%".format(temp, hum)
-    except:
+        sensor_str = "{:4.1f}C {:4.1f}%".format(temp, hum)
+    except TypeError:
         sensor_str = '----- -----'
     print("{} / {}".format(time_str, sensor_str))
 
@@ -250,13 +254,14 @@ def set_clock(timestamp=None):
     #     col += len(img[0]) + 1
     col = 10
     for img in time_display:
-        matrix.set_pixels(5, col+1, img)
+        matrix.set_pixels(5, col + 1, img)
         col += len(img[0]) + 2
 
     col = 2
     for img in sensor_display:
-        matrix.set_pixels(22, col+1, img)
+        matrix.set_pixels(22, col + 1, img)
         col += len(img[0]) + 1
+
 
 ##-----------------------------------------------------------------------------
 async def _set_clock(lock):
@@ -275,6 +280,7 @@ async def _set_clock(lock):
             lock.release()
         await asyncio.sleep(1)
 
+
 ##=============================================================================
 def sync_time_NTP():
     '''
@@ -292,9 +298,10 @@ def sync_time_NTP():
         print('<< NTP timestamp:', time.time())
         return True
 
-    except:
+    except Exception:
         print('!! NTP synchronization failed!')
         return False
+
 
 ##-----------------------------------------------------------------------------
 async def _sync_time_NTP(lock):
@@ -320,6 +327,7 @@ async def _sync_time_NTP(lock):
 
         await asyncio.sleep(5)
 
+
 ##-----------------------------------------------------------------------------
 async def _refresh_display(lock):
     '''
@@ -331,6 +339,7 @@ async def _refresh_display(lock):
         lock.release()
         await asyncio.sleep(0)
 
+
 ##-----------------------------------------------------------------------------
 def _clocktick(timer):
     '''
@@ -339,6 +348,7 @@ def _clocktick(timer):
     global ts_clocktick
 
     ts_clocktick += 1
+
 
 ##=============================================================================
 async def main():
