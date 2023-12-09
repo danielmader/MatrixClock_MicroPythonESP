@@ -6,10 +6,10 @@ MatrixClock - an ESP32 driven HUB75 LED matrix clock.
 * Temperature/humidity ambient sensor (Sensirion SHT40).
 
 @author: mada
-@version: 2023-12-06
+@version: 2023-12-09
 """
 
-## system modules
+## System modules
 from machine import Timer
 from machine import Pin
 from machine import I2C
@@ -24,7 +24,7 @@ import hub75
 import matrixdata
 from logo import logo
 
-## custom modules
+## Custom modules
 import wlan_util  # => creds.py
 import datetime_util
 import characters
@@ -40,85 +40,88 @@ debug_mode = False
 ntp_interval = 3600 * 12  # 3600s = 60min = 1h
 ts_ntpsync = 0
 
-## init clock -----------------------------------------------------------------
+## Init clock -----------------------------------------------------------------
 if debug_mode:
-    ## start at 05:59:00 UTC = 06:59:00 CET ...
+    ## Start at 05:59:00 UTC = 06:59:00 CET ...
     ts_clocktick = 60 * 60 * 5 + 59 * 60
 else:
-    ## start at 00:00:00 UTC
+    ## Start at 00:00:00 UTC
     ts_clocktick = time.time()
 
 ## HUB75 LED matrix with custom pinout ----------------------------------------
 config = hub75.Hub75SpiConfiguration()
-## row select pins
+## Row select pins
 config.line_select_a_pin_number = 15
 config.line_select_b_pin_number = 2
 config.line_select_c_pin_number = 4
 config.line_select_d_pin_number = 16
 config.line_select_e_pin_number = 12
-## color data pins
+## Color data pins
 config.red1_pin_number = 32
 config.green1_pin_number = 33
 config.blue1_pin_number = 25
 config.red2_pin_number = 26
 config.green2_pin_number = 27
 config.blue2_pin_number = 14
-## logic pins
+## Logic pins
 config.clock_pin_number = 18
 config.latch_pin_number = 5
 config.output_enable_pin_number = 17  # active low
 config.spi_miso_pin_number = 13  # not connected
-## misc
-config.illumination_time_microseconds = 1
+## Misc
+# config.illumination_time_microseconds = 1
 
 matrix = matrixdata.MatrixData(row_size=32, col_size=64)
-matrix.record_dirty_bytes = False
+matrix.record_dirty_bytes = True
 
 hub75spi = hub75.Hub75Spi(matrix, config)
 
-## dot matrix characters ------------------------------------------------------
+## Dot matrix characters ------------------------------------------------------
+## Characters are 2D arrays with 0..7 for 3-bit colors RGB
+## Blue is #001b, i.e. 1
 big_blue = {
-    '0' : characters.big0,
-    '1' : characters.big1,
-    '2' : characters.big2,
-    '3' : characters.big3,
-    '4' : characters.big4,
-    '5' : characters.big5,
-    '6' : characters.big6,
-    '7' : characters.big7,
-    '8' : characters.big8,
-    '9' : characters.big9,
-    '.' : characters.big_dot,
-    ':' : characters.big_colon,
-    '°' : characters.big_degree,
-    'C' : characters.big_degreeC,
-    '%' : characters.big_percent,
-    '-' : characters.big_dash,
-    ' ' : characters.big_space,
-    '~' : characters.pixel_black,
+    '0' : characters.big0,         # 8 x14
+    '1' : characters.big1,         # 8 x14
+    '2' : characters.big2,         # 8 x14
+    '3' : characters.big3,         # 8 x14
+    '4' : characters.big4,         # 8 x14
+    '5' : characters.big5,         # 8 x14
+    '6' : characters.big6,         # 8 x14
+    '7' : characters.big7,         # 8 x14
+    '8' : characters.big8,         # 8 x14
+    '9' : characters.big9,         # 8 x14
+    '.' : characters.big_dot,      # 2 x14
+    ':' : characters.big_colon,    # 2 x14
+    '°' : characters.big_degree,   # 4 x14
+    'C' : characters.big_degreeC,  # 8 x14
+    '%' : characters.big_percent,  # 8 x14
+    '-' : characters.big_dash,     # 8 x14
+    ' ' : characters.big_space,    # 8 x14
+    '~' : characters.pixel_black,  # 1 x1
     }
 
 small_blue = {
-    '0' : characters.small0,
-    '1' : characters.small1,
-    '2' : characters.small2,
-    '3' : characters.small3,
-    '4' : characters.small4,
-    '5' : characters.small5,
-    '6' : characters.small6,
-    '7' : characters.small7,
-    '8' : characters.small8,
-    '9' : characters.small9,
-    '.' : characters.small_dot,
-    ':' : characters.small_colon,
-    '°' : characters.small_degree,
-    'C' : characters.small_degreeC,
-    '%' : characters.small_percent,
-    '-' : characters.small_dash,
-    ' ' : characters.small_space,
-    '~' : characters.pixel_black,
+    '0' : characters.small0,         # 5 x7
+    '1' : characters.small1,         # 5 x7
+    '2' : characters.small2,         # 5 x7
+    '3' : characters.small3,         # 5 x7
+    '4' : characters.small4,         # 5 x7
+    '5' : characters.small5,         # 5 x7
+    '6' : characters.small6,         # 5 x7
+    '7' : characters.small7,         # 5 x7
+    '8' : characters.small8,         # 5 x7
+    '9' : characters.small9,         # 5 x7
+    '.' : characters.small_dot,      # 1 x7
+    ':' : characters.small_colon,    # 1 x7
+    '°' : characters.small_degree,   # 3 x7
+    'C' : characters.small_degreeC,  # 6 x7
+    '%' : characters.small_percent,  # 5 x7
+    '-' : characters.small_dash,     # 4 x7
+    ' ' : characters.small_space,    # 5 x7
+    '~' : characters.pixel_black,    # 1 x1
     }
 
+## Yellow is #110b, i.e. 6
 big_yellow = {}
 for char in big_blue:
     big_yellow[char] = []
@@ -189,7 +192,7 @@ def set_clock(timestamp=None):
     Update the display readings.
     '''
     ##-------------------------------------------------------------------------
-    ## assemble time and sensor strings
+    ## Assemble raw time and sensor strings
     if not timestamp:
         timestamp = ts_clocktick
 
@@ -206,17 +209,29 @@ def set_clock(timestamp=None):
     except Exception:
         temp, hum = None, None
 
-    ## TODO: show full timestamp when flickerfree
-    # time_str = "{:02d}:{:02d}.{:02d}".format(hour, minute, second)
-    time_str = "{:02d}:{:02d}".format(hour, minute)
+    ## DEBUG
+    # if second // 10 == 0:
+    #     temp, hum = 9.9, 55.5
+    # elif second // 10 == 1:
+    #     temp, hum = -9.9, 55.5
+    # elif second // 10 == 2:
+    #     temp, hum = -11.1, 55.5
+    # elif second // 10 == 3:
+    #     temp, hum = 3.3, 4.4
+    # elif second // 10 == 4:
+    #     temp, hum = 22.2, 55.5
+    # elif second // 10 == 5:
+    #     temp, hum = None, None
+
+    time_str = "{:02d}:{:02d}.{:02d}".format(hour, minute, second)
     try:
         sensor_str = "{:4.1f}C {:4.1f}%".format(temp, hum)
-    except TypeError:
-        sensor_str = '----- -----'
+    except ValueError:
+        sensor_str = '----  ----'
     print("{} / {}".format(time_str, sensor_str))
 
     ##-------------------------------------------------------------------------
-    ## use darkmode during night time
+    ## Use darkmode during night time
     ## TODO: handle darkmode
     # if hour in [20,21,22,23,0,1,2,3,4,5,6]:
     #     darkmode = True
@@ -226,41 +241,63 @@ def set_clock(timestamp=None):
     small = small_yellow
 
     ##-------------------------------------------------------------------------
-    ## assemble character images lists per line
-    # time_display = []
-    ## TODO: show full timestamp when flickerfree
-    # for char in time_str[:-3]:
-    #     time_display.append(big[char])
-    # for char in time_str[-3:]:
-    #     time_display.append(small[char])
+    ## Assemble character images lists per line
     time_display = []
-    for char in time_str:
-        time_display.append(big[char])
-
     sensor_display = []
+    ## Time HH:MM in big chars
+    for char in time_str[:-3]:
+        time_display.append(big[char])
+    ## Time .SS in small chars
+    for char in time_str[-3:]:
+        time_display.append(small[char])
+    ## Sensor data in small chars
     for char in sensor_str:
         sensor_display.append(small[char])
 
     ##-------------------------------------------------------------------------
-    #matrix.clear_dirty_bytes()
-    matrix.clear_all_bytes()
-    ## TODO: show full timestamp when flickerfree
-    # col = 4
-    # for img in time_display[:-3]:
-    #     matrix.set_pixels(5, col+1, img)
-    #     col += len(img[0]) + 1
-    # for img in time_display[-3:]:
-    #     matrix.set_pixels(12, col+1, img)
-    #     col += len(img[0]) + 1
-    col = 10
-    for img in time_display:
-        matrix.set_pixels(5, col + 1, img)
-        col += len(img[0]) + 2
+    ## Concatenate character arrays and center on screen
+    matrix.clear_dirty_bytes()
+    # matrix.clear_all_bytes()
 
-    col = 2
+    ## Default character spacings
+    space_big = 2    # default spacing for 'big'
+    space_small = 1  # default spacing for 'small'
+
+    ## 1) pixels(HH:MM)    = 2*8(+4) + 2(+2) + 2*8(+2) = 42
+    ## 2) pixels(HH:MM.SS) = 42(+2) + 1+2*5(+2)        = 57
+    # => 1st column index is ((64 - pixels) / 2) =
+    ## 1) : 11
+    ## 2) :  3.5
+    ## TODO: Show full timestamp when flickerfree, see async def _set_clock()
+    col = 4   # HH:MM.ss
+    col = 11  # HH:MM
+    for img in time_display[:-3]:
+        matrix.set_pixels(5, col, img)
+        col += len(img[0]) + space_big
+    # for img in time_display[-3:]:
+    #     matrix.set_pixels(5, col, img)
+    #     col += len(img[0]) + space_small
+
+    ## 1) pixels('xx.xC xx.x%') = 5+5+1+5+6(+5) + [5](+1) + 5+5+1+5+5(+4) = 58
+    ## 2) pixels('-x.xC xx.x%') = 4+5+1+5+6(+5) + [5](+1) + 5+5+1+5+5(+4) = 57
+    ## 3) pixels('-xx.xC xx.x%') = 4(+1) + 58                             = 63
+    ## 4) pixels('----  ----') = 8*4 + 2*5 (+9)                           = 51
+    ## => 1st column index is ((64 - pixels) / 2) =
+    ## 1) :  3
+    ## 2) :  3.5
+    ## 3) :  0.5
+    ## 4) :  6.5
+    if len(sensor_str) == 11 and temp >= 0:
+        col = 3
+    if len(sensor_str) == 11 and temp < 0:
+        col = 4
+    elif len(sensor_str) == 12:
+        col = 1
+    elif len(sensor_str) == 10:
+        col = 7
     for img in sensor_display:
-        matrix.set_pixels(22, col + 1, img)
-        col += len(img[0]) + 1
+        matrix.set_pixels(22, col, img)
+        col += len(img[0]) + space_small
 
 
 ##-----------------------------------------------------------------------------
@@ -270,9 +307,8 @@ async def _set_clock(lock):
     '''
     while True:
         print("{:02d}.{:02d}:{:02d}".format(*time.localtime(ts_clocktick)[3:6]))
-        ## DEBUG
-        # print(ts_clocktick % 60)
-        ## TODO: show full timestamp when flickerfree
+
+        ## TODO: update every second when when flickerfree
         # if ts_clocktick % 30 == 0:  # 2023-06-30: update every 30secs
         if ts_clocktick % 10 == 0:  # 2023-12-06: update every 10secs
             await lock.acquire()
