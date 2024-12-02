@@ -27,10 +27,4 @@ The sensor (7.95€) came on a convenient break-out board from Adafruit:
 
 This project requires [Ben Emmett's Hub75MicroPython](https://github.com/benjohnemmett/Hub75MicroPython) library, which is perfectly suitable for a simple MicroPython-only application. Ben was very helpful to optimize his library to maximum performance and provided numerous tips and tricks on how to implement it.
 
-There is still a noticable flicker when the screen objects are changed, but it is certainly acceptable for an update of the clockface every minute.
-
-# Example
-![20230227_153754](https://user-images.githubusercontent.com/10500110/221593639-3fc39de0-8efb-4da1-ab3b-9f07e298da30.jpg)
-
-![20230227_153808](https://user-images.githubusercontent.com/10500110/221593715-8d877463-2181-488e-8488-2121160115bb.jpg)
-
+There is still a noticable flicker when the screen objects are changed (and also sporadically when the board is busy), but it is certainly acceptable for an update of the clockface every minute.
